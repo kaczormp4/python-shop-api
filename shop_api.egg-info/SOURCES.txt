@@ -1,0 +1,7 @@
+README.md
+pyproject.toml
+shop_api.egg-info/PKG-INFO
+shop_api.egg-info/SOURCES.txt
+shop_api.egg-info/dependency_links.txt
+shop_api.egg-info/requires.txt
+shop_api.egg-info/top_level.txt
