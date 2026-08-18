@@ -28,9 +28,17 @@ def get_products_service() -> Generator[ProductsService, None, None]:
 def create_product(
     product: ProductCreate,
     service: ProductsService = Depends(get_products_service),
-):
+) -> Product:
+    domain_product = Product(
+        name=product.name,
+        description=product.description,
+        category=product.category,
+        price=float(product.price),
+        quantity_stock=product.quantity_stock,
+    )
+
     try:
-        return service.create_product(product)
+        return service.create_product(domain_product)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
