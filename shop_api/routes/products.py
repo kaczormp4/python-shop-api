@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from collections.abc import Generator
 
+from fastapi import APIRouter, Depends, HTTPException, status
 from shop.domain.entities import Product
 from shop.domain.services.products import ProductsService
 from shop.infrastructure.dependencies import get_uow
 from shop.infrastructure.repositories.products import ImplProductsRepository
 
+from shop_api.schemas.products import ProductCreate, ProductResponse
 
 router = APIRouter(
     prefix="/products",
@@ -12,23 +14,31 @@ router = APIRouter(
 )
 
 
-def get_products_service() -> ProductsService:
+def get_products_service() -> Generator[ProductsService, None, None]:
     with get_uow() as uow:
         repository = ImplProductsRepository(uow)
-        return ProductsService(repository)
+        yield ProductsService(repository)
 
 
 @router.post(
     "",
-    response_model=Product,
+    response_model=ProductResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def create_product(
-    product: Product,
+    product: ProductCreate,
     service: ProductsService = Depends(get_products_service),
 ) -> Product:
+    domain_product = Product(
+        name=product.name,
+        description=product.description,
+        category=product.category,
+        price=float(product.price),
+        quantity_stock=product.quantity_stock,
+    )
+
     try:
-        return service.create_product(product)
+        return service.create_product(domain_product)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -38,22 +48,22 @@ def create_product(
 
 @router.get(
     "",
-    response_model=list[Product],
+    response_model=list[ProductResponse],
 )
 def list_products(
     service: ProductsService = Depends(get_products_service),
-) -> list[Product]:
+):
     return service.list_products()
 
 
 @router.get(
     "/{product_id}",
-    response_model=Product,
+    response_model=ProductResponse,
 )
 def get_product_by_id(
     product_id: str,
     service: ProductsService = Depends(get_products_service),
-) -> Product:
+):
     try:
         return service.get_product_by_id(product_id)
     except ValueError as exc:
