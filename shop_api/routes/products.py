@@ -8,7 +8,7 @@ from shop.infrastructure.repositories.products import ImplProductsRepository
 
 from shop_api.schemas.products import ProductCreate, ProductResponse
 
-router = APIRouter(
+products_router = APIRouter(
     prefix="/products",
     tags=["products"],
 )
@@ -20,7 +20,7 @@ def get_products_service() -> Generator[ProductsService, None, None]:
         yield ProductsService(repository)
 
 
-@router.post(
+@products_router.post(
     "",
     response_model=ProductResponse,
     status_code=status.HTTP_201_CREATED,
@@ -46,7 +46,7 @@ def create_product(
         ) from exc
 
 
-@router.get(
+@products_router.get(
     "",
     response_model=list[ProductResponse],
 )
@@ -56,7 +56,7 @@ def list_products(
     return service.list_products()
 
 
-@router.get(
+@products_router.get(
     "/{product_id}",
     response_model=ProductResponse,
 )
@@ -73,7 +73,7 @@ def get_product_by_id(
         ) from exc
 
 
-@router.put(
+@products_router.put(
     "/{product_id}",
     response_model=Product,
 )
@@ -94,7 +94,7 @@ def update_product(
         ) from exc
 
 
-@router.delete(
+@products_router.delete(
     "/{product_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
