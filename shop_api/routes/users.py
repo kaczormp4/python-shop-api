@@ -7,6 +7,7 @@ from shop.domain.services.users import UsersService
 from shop.infrastructure.dependencies import get_uow
 from shop.infrastructure.repositories.users import ImplUsersRepository
 
+from shop_api.auth.jwt import get_current_user
 from shop_api.schemas.users import (
     UserCreate,
     UserResponse,
@@ -49,6 +50,7 @@ def create_user(
 )
 def list_users(
     service: UsersService = Depends(get_users_service),
+    token: dict = Depends(get_current_user),
 ) -> list[User]:
     return service.list_users()
 
