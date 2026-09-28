@@ -11,11 +11,11 @@ from shop.infrastructure.repositories.user_roles import (
 )
 from shop.infrastructure.repositories.users import ImplUsersRepository
 
+from shop_api.auth.jwt import get_current_user
 from shop_api.schemas.roles import RoleResponse
 
 user_roles_router = APIRouter(
-    prefix="/users",
-    tags=["user roles"],
+    prefix="/users", tags=["user roles"], dependencies=[Depends(get_current_user)]
 )
 
 

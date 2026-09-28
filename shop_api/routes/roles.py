@@ -7,15 +7,13 @@ from shop.domain.services.roles import RolesService
 from shop.infrastructure.dependencies import get_uow
 from shop.infrastructure.repositories.roles import ImplRolesRepository
 
+from shop_api.auth.jwt import get_current_user
 from shop_api.schemas.roles import (
     RoleCreate,
     RoleResponse,
 )
 
-roles_router = APIRouter(
-    prefix="/roles",
-    tags=["roles"],
-)
+roles_router = APIRouter(prefix="/roles", tags=["roles"], dependencies=[Depends(get_current_user)])
 
 
 def get_roles_service() -> Generator[RolesService, None, None]:

@@ -7,6 +7,7 @@ from shop.infrastructure.dependencies import get_uow
 from shop.infrastructure.orm.orders import OrderModel
 from shop.infrastructure.repositories.orders import ImplOrdersRepository
 
+from shop_api.auth.jwt import get_current_user
 from shop_api.schemas.orders import (
     OrderCreate,
     OrderResponse,
@@ -14,8 +15,7 @@ from shop_api.schemas.orders import (
 )
 
 orders_router = APIRouter(
-    prefix="/orders",
-    tags=["orders"],
+    prefix="/orders", tags=["orders"], dependencies=[Depends(get_current_user)]
 )
 
 

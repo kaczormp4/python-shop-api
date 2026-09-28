@@ -21,7 +21,7 @@ def get_current_user(
 
     user = service.get_user_by_id(decoded_token["sub"])
 
-    if user in None:
+    if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
     return decoded_token

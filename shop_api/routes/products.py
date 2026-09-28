@@ -6,11 +6,11 @@ from shop.domain.services.products import ProductsService
 from shop.infrastructure.dependencies import get_uow
 from shop.infrastructure.repositories.products import ImplProductsRepository
 
+from shop_api.auth.jwt import get_current_user
 from shop_api.schemas.products import ProductCreate, ProductResponse
 
 products_router = APIRouter(
-    prefix="/products",
-    tags=["products"],
+    prefix="/products", tags=["products"], dependencies=[Depends(get_current_user)]
 )
 
 

@@ -45,7 +45,7 @@ def register_user(
     )
 
     try:
-        return service.create_user(domain_user)
+        service.create_user(domain_user)
 
     except ValueError as exc:
         raise HTTPException(
@@ -62,16 +62,17 @@ def login_user(
     login: Login,
     service: UsersService = Depends(get_users_service),
 ) -> dict:
-    try:
-        user = service.login_user(
-            login.email,
-            login.password,
-        )
+    user = service.login_user(
+        login.email,
+        login.password,
+    )
 
-        return create_access_token(str(user.id), user.email)
+    token = create_access_token(
+        str(user.id),
+        user.email,
+    )
 
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(exc),
-        ) from exc
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+    }
