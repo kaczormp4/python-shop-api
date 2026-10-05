@@ -1,0 +1,28 @@
+roles:
+  user:
+    permissions:
+      - products.read
+      - orders.create
+      - orders.read_own
+
+  employee:
+    inherits:
+      - user
+    permissions:
+      - products.create
+      - products.update
+      - orders.read
+      - orders.update
+
+  admin:
+    inherits:
+      - employee
+    permissions:
+      - products.delete
+      - orders.delete
+      - users.read
+      - users.create
+      - users.update
+      - users.delete
+      - roles.assign
+      - roles.unassign

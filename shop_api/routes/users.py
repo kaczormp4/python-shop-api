@@ -48,29 +48,32 @@ def get_user_roles_service() -> Generator[
 
 def require_role(
     required_roles: list[str],
-    current_user=Depends(get_current_user),
-    service: UserRolesService = Depends(get_user_roles_service),
 ):
-    current_timestamp = datetime.now(UTC).timestamp()
-
-    if current_user["exp"] < current_timestamp:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired",
-        )
-
-    user_roles = service.get_user_roles(current_user["sub"])
-
-    user_role_names = [user_role.role.value for user_role in user_roles]
-
-    for required_role in required_roles:
-        if required_role not in user_role_names:
+    def dependency(
+        current_user=Depends(get_current_user),
+        service: UserRolesService = Depends(get_user_roles_service),
+    ):
+        current_timestamp = datetime.now(UTC).timestamp()
+        if current_user["exp"] < current_timestamp:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token expired",
             )
 
-    return current_user
+        user_roles = service.get_user_roles(current_user["sub"])
+
+        user_role_names = [user_role.role.value for user_role in user_roles]
+
+        for required_role in required_roles:
+            if required_role not in user_role_names:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Insufficient permissions",
+                )
+
+        return current_user
+
+    return dependency
 
 
 @users_router.post(
@@ -108,7 +111,7 @@ def list_users(
 def get_user_by_id(
     user_id: UUID,
     service: UsersService = Depends(get_users_service),
-    _: str = Depends(require_role(["ADMIN"])),
+    _: str = Depends(require_role(["admin"])),
 ) -> User:
     try:
         return service.get_user_by_id(user_id)
