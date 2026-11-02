@@ -1,39 +1,19 @@
-from collections.abc import Generator
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from shop.domain.entities.roles import UserRole
 from shop.domain.services.user_roles import UserRolesService
-from shop.infrastructure.dependencies import get_uow
-from shop.infrastructure.repositories.roles import ImplRolesRepository
-from shop.infrastructure.repositories.user_roles import (
-    ImplUserRolesRepository,
-)
-from shop.infrastructure.repositories.users import ImplUsersRepository
 
 from shop_api.auth.jwt import get_current_user
+from shop_api.auth.permissions import require_permission
+from shop_api.dependencies import get_user_roles_service
 from shop_api.schemas.roles import RoleResponse
 
 user_roles_router = APIRouter(
-    prefix="/users", tags=["user roles"], dependencies=[Depends(get_current_user)]
+    prefix="/users",
+    tags=["user roles"],
+    dependencies=[Depends(get_current_user)],
 )
-
-
-def get_user_roles_service() -> Generator[
-    UserRolesService,
-    None,
-    None,
-]:
-    with get_uow() as uow:
-        user_roles_repository = ImplUserRolesRepository(uow)
-        users_repository = ImplUsersRepository(uow)
-        roles_repository = ImplRolesRepository(uow)
-
-        yield UserRolesService(
-            user_roles_repository,
-            users_repository,
-            roles_repository,
-        )
 
 
 @user_roles_router.post(
@@ -44,6 +24,7 @@ def assign_role(
     user_id: UUID,
     role_id: UUID,
     service: UserRolesService = Depends(get_user_roles_service),
+    _: dict = Depends(require_permission("roles.assign")),
 ) -> None:
     try:
         service.assign_role(
@@ -66,6 +47,7 @@ def remove_role(
     user_id: UUID,
     role_id: UUID,
     service: UserRolesService = Depends(get_user_roles_service),
+    _: dict = Depends(require_permission("roles.unassign")),
 ) -> None:
     try:
         service.remove_role(
@@ -87,6 +69,7 @@ def remove_role(
 def get_user_roles(
     user_id: UUID,
     service: UserRolesService = Depends(get_user_roles_service),
+    _: dict = Depends(require_permission("users.read")),
 ) -> list[UserRole]:
     try:
         return service.get_user_roles(user_id)

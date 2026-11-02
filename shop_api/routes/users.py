@@ -1,5 +1,4 @@
 from collections.abc import Generator
-from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -14,12 +13,17 @@ from shop.infrastructure.repositories.user_roles import (
 from shop.infrastructure.repositories.users import ImplUsersRepository
 
 from shop_api.auth.jwt import get_current_user
+from shop_api.auth.permissions import require_permission
 from shop_api.schemas.users import (
     UserCreate,
     UserResponse,
 )
 
-users_router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(get_current_user)])
+users_router = APIRouter(
+    prefix="/users",
+    tags=["users"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def get_users_service() -> Generator[UsersService, None, None]:
@@ -46,36 +50,6 @@ def get_user_roles_service() -> Generator[
         )
 
 
-def require_role(
-    required_roles: list[str],
-):
-    def dependency(
-        current_user=Depends(get_current_user),
-        service: UserRolesService = Depends(get_user_roles_service),
-    ):
-        current_timestamp = datetime.now(UTC).timestamp()
-        if current_user["exp"] < current_timestamp:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token expired",
-            )
-
-        user_roles = service.get_user_roles(current_user["sub"])
-
-        user_role_names = [user_role.role.value for user_role in user_roles]
-
-        for required_role in required_roles:
-            if required_role not in user_role_names:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Insufficient permissions",
-                )
-
-        return current_user
-
-    return dependency
-
-
 @users_router.post(
     "",
     response_model=UserResponse,
@@ -84,6 +58,7 @@ def require_role(
 def create_user(
     user: UserCreate,
     service: UsersService = Depends(get_users_service),
+    _: dict = Depends(require_permission("users.create")),
 ) -> User:
     domain_user = User(
         name=user.name,
@@ -100,6 +75,7 @@ def create_user(
 )
 def list_users(
     service: UsersService = Depends(get_users_service),
+    _: dict = Depends(require_permission("users.read")),
 ) -> list[User]:
     return service.list_users()
 
@@ -111,7 +87,7 @@ def list_users(
 def get_user_by_id(
     user_id: UUID,
     service: UsersService = Depends(get_users_service),
-    _: str = Depends(require_role(["admin"])),
+    _: dict = Depends(require_permission("users.read")),
 ) -> User:
     try:
         return service.get_user_by_id(user_id)
@@ -130,6 +106,7 @@ def get_user_by_id(
 def delete_user(
     user_id: UUID,
     service: UsersService = Depends(get_users_service),
+    _: dict = Depends(require_permission("users.delete")),
 ) -> None:
     try:
         service.delete_user(user_id)

@@ -11,6 +11,8 @@ Requires-Python: >=3.12
 Description-Content-Type: text/markdown
 Requires-Dist: fastapi>=0.115.0
 Requires-Dist: uvicorn[standard]>=0.30.0
+Requires-Dist: boto3>=1.43.111
+Requires-Dist: mangum<1,>=0.19
 Provides-Extra: dev
 Requires-Dist: pytest>=8.3.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
@@ -19,3 +21,7 @@ Requires-Dist: ruff>=0.6.0; extra == "dev"
 Requires-Dist: mypy>=1.11.0; extra == "dev"
 
 uvicorn main:app --reload
+python3 -m uvicorn main:app --reload --port 8003 
+
+
+

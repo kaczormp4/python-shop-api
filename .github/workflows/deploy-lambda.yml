@@ -1,0 +1,55 @@
+name: Deploy Shop API Lambda
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
+      - name: Build package
+        run: |
+          mkdir -p dist/package
+          cp main.py dist/package/
+          cp -r shop_api dist/package/
+
+          python -m pip install \
+            "mangum>=0.19,<1" \
+            --no-deps \
+            --target dist/package
+
+          cd dist/package
+          zip -qr ../shop-api.zip .
+
+      - name: Deploy Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name shop-api \
+            --zip-file fileb://dist/shop-api.zip
+
+      - name: Wait for update
+        run: |
+          aws lambda wait function-updated \
+            --function-name shop-api

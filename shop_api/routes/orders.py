@@ -8,6 +8,7 @@ from shop.infrastructure.orm.orders import OrderModel
 from shop.infrastructure.repositories.orders import ImplOrdersRepository
 
 from shop_api.auth.jwt import get_current_user
+from shop_api.auth.permissions import require_permission
 from shop_api.schemas.orders import (
     OrderCreate,
     OrderResponse,
@@ -15,7 +16,9 @@ from shop_api.schemas.orders import (
 )
 
 orders_router = APIRouter(
-    prefix="/orders", tags=["orders"], dependencies=[Depends(get_current_user)]
+    prefix="/orders",
+    tags=["orders"],
+    dependencies=[Depends(get_current_user)],
 )
 
 
@@ -34,6 +37,7 @@ def get_orders_service() -> Generator[OrdersService, None, None]:
 def create_order(
     order: OrderCreate,
     service: OrdersService = Depends(get_orders_service),
+    _: dict = Depends(require_permission("orders.create")),
 ) -> OrderModel:
     order_model = OrderModel(
         total_price=order.total_price,
@@ -43,6 +47,7 @@ def create_order(
 
     try:
         return service.create_order(order_model)
+
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -56,6 +61,7 @@ def create_order(
 )
 def list_orders(
     service: OrdersService = Depends(get_orders_service),
+    _: dict = Depends(require_permission("orders.read")),
 ) -> list[OrderModel]:
     return service.list_orders()
 
@@ -67,6 +73,7 @@ def list_orders(
 def get_order_by_id(
     order_id: UUID,
     service: OrdersService = Depends(get_orders_service),
+    _: dict = Depends(require_permission("orders.read")),
 ) -> OrderModel:
     try:
         return service.get_order_by_id(order_id)
@@ -86,6 +93,7 @@ def update_order(
     order_id: UUID,
     order: OrderUpdate,
     service: OrdersService = Depends(get_orders_service),
+    _: dict = Depends(require_permission("orders.update")),
 ) -> OrderModel:
     order_model = OrderModel(
         total_price=order.total_price,
@@ -113,6 +121,7 @@ def update_order(
 def delete_order(
     order_id: UUID,
     service: OrdersService = Depends(get_orders_service),
+    _: dict = Depends(require_permission("orders.delete")),
 ) -> None:
     try:
         service.delete_order(order_id)

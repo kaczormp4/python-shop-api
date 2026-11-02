@@ -8,12 +8,17 @@ from shop.infrastructure.dependencies import get_uow
 from shop.infrastructure.repositories.roles import ImplRolesRepository
 
 from shop_api.auth.jwt import get_current_user
+from shop_api.auth.permissions import require_permission
 from shop_api.schemas.roles import (
     RoleCreate,
     RoleResponse,
 )
 
-roles_router = APIRouter(prefix="/roles", tags=["roles"], dependencies=[Depends(get_current_user)])
+roles_router = APIRouter(
+    prefix="/roles",
+    tags=["roles"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def get_roles_service() -> Generator[RolesService, None, None]:
@@ -31,6 +36,7 @@ def get_roles_service() -> Generator[RolesService, None, None]:
 def create_role(
     role: RoleCreate,
     service: RolesService = Depends(get_roles_service),
+    _: dict = Depends(require_permission("roles.create")),
 ) -> UserRole:
     domain_role = UserRole(
         role=role.role,
@@ -45,6 +51,7 @@ def create_role(
 )
 def list_roles(
     service: RolesService = Depends(get_roles_service),
+    _: dict = Depends(require_permission("roles.read")),
 ) -> list[UserRole]:
     return service.list_roles()
 
@@ -56,6 +63,7 @@ def list_roles(
 def get_role_by_id(
     role_id: UUID,
     service: RolesService = Depends(get_roles_service),
+    _: dict = Depends(require_permission("roles.read")),
 ) -> UserRole:
     try:
         return service.get_role_by_id(role_id)
@@ -74,6 +82,7 @@ def get_role_by_id(
 def delete_role(
     role_id: UUID,
     service: RolesService = Depends(get_roles_service),
+    _: dict = Depends(require_permission("roles.delete")),
 ) -> None:
     try:
         service.delete_role(role_id)

@@ -7,16 +7,23 @@ from shop.infrastructure.dependencies import get_uow
 from shop.infrastructure.repositories.products import ImplProductsRepository
 
 from shop_api.auth.jwt import get_current_user
-from shop_api.schemas.products import ProductCreate, ProductResponse
+from shop_api.auth.permissions import require_permission
+from shop_api.schemas.products import (
+    ProductCreate,
+    ProductResponse,
+)
 
 products_router = APIRouter(
-    prefix="/products", tags=["products"], dependencies=[Depends(get_current_user)]
+    prefix="/products",
+    tags=["products"],
+    dependencies=[Depends(get_current_user)],
 )
 
 
 def get_products_service() -> Generator[ProductsService, None, None]:
     with get_uow() as uow:
         repository = ImplProductsRepository(uow)
+
         yield ProductsService(repository)
 
 
@@ -28,6 +35,7 @@ def get_products_service() -> Generator[ProductsService, None, None]:
 def create_product(
     product: ProductCreate,
     service: ProductsService = Depends(get_products_service),
+    _: dict = Depends(require_permission("products.create")),
 ) -> Product:
     domain_product = Product(
         name=product.name,
@@ -39,6 +47,7 @@ def create_product(
 
     try:
         return service.create_product(domain_product)
+
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -52,7 +61,8 @@ def create_product(
 )
 def list_products(
     service: ProductsService = Depends(get_products_service),
-):
+    _: dict = Depends(require_permission("products.read")),
+) -> list[Product]:
     return service.list_products()
 
 
@@ -63,9 +73,11 @@ def list_products(
 def get_product_by_id(
     product_id: str,
     service: ProductsService = Depends(get_products_service),
-):
+    _: dict = Depends(require_permission("products.read")),
+) -> Product:
     try:
         return service.get_product_by_id(product_id)
+
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -75,18 +87,28 @@ def get_product_by_id(
 
 @products_router.put(
     "/{product_id}",
-    response_model=Product,
+    response_model=ProductResponse,
 )
 def update_product(
     product_id: str,
-    product: Product,
+    product: ProductCreate,
     service: ProductsService = Depends(get_products_service),
+    _: dict = Depends(require_permission("products.update")),
 ) -> Product:
+    domain_product = Product(
+        name=product.name,
+        description=product.description,
+        category=product.category,
+        price=float(product.price),
+        quantity_stock=product.quantity_stock,
+    )
+
     try:
         return service.update_product(
             product_id,
-            product,
+            domain_product,
         )
+
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -101,9 +123,11 @@ def update_product(
 def delete_product(
     product_id: str,
     service: ProductsService = Depends(get_products_service),
+    _: dict = Depends(require_permission("products.delete")),
 ) -> None:
     try:
         service.delete_product(product_id)
+
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

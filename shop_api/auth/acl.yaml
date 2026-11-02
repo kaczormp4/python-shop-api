@@ -2,6 +2,7 @@ roles:
   user:
     permissions:
       - products.read
+      
       - orders.create
       - orders.read_own
 
@@ -11,6 +12,7 @@ roles:
     permissions:
       - products.create
       - products.update
+
       - orders.read
       - orders.update
 
@@ -19,10 +21,16 @@ roles:
       - employee
     permissions:
       - products.delete
+
       - orders.delete
+
       - users.read
       - users.create
       - users.update
       - users.delete
+
+      - roles.read
+      - roles.create
+      - roles.delete
       - roles.assign
       - roles.unassign
